@@ -237,12 +237,45 @@ void RefreshListView(const std::wstring& filter = L"") {
 
 // ==================== 发送回车 ====================
 bool SendEnter(HWND hwnd) {
-    // 方式1：后台 PostMessage（最常用，不抢焦点）
-    // 先发 WM_KEYDOWN + WM_KEYUP（键盘消息）
-    // 再发 WM_CHAR（字符消息，部分程序靠这个接收输入）
-    PostMessageW(hwnd, WM_KEYDOWN, VK_RETURN, 0x001C0001);
-    PostMessageW(hwnd, WM_KEYUP,   VK_RETURN, 0xC01C0001);
-    PostMessageW(hwnd, WM_CHAR,    0x0D,      0x001C0001);
+    // 前台注入模式：激活窗口 + 模拟键盘（最可靠）
+    DWORD targetTid = GetWindowThreadProcessId(hwnd, NULL);
+    DWORD curTid = GetCurrentThreadId();
+
+    // 附加线程输入，共享键盘状态
+    BOOL attached = FALSE;
+    if (targetTid != curTid) {
+        attached = AttachThreadInput(curTid, targetTid, TRUE);
+    }
+
+    // 激活目标窗口
+    if (IsIconic(hwnd)) ShowWindow(hwnd, SW_RESTORE);
+    SetForegroundWindow(hwnd);
+    SetFocus(hwnd);
+    Sleep(50);
+
+    // 模拟按下回车
+    INPUT inputs[2] = {};
+
+    // KEYDOWN
+    inputs[0].type = INPUT_KEYBOARD;
+    inputs[0].ki.wVk = VK_RETURN;
+    inputs[0].ki.wScan = 0x1C;
+    inputs[0].ki.dwFlags = 0;
+
+    // KEYUP
+    inputs[1].type = INPUT_KEYBOARD;
+    inputs[1].ki.wVk = VK_RETURN;
+    inputs[1].ki.wScan = 0x1C;
+    inputs[1].ki.dwFlags = KEYEVENTF_KEYUP;
+
+    SendInput(2, inputs, sizeof(INPUT));
+
+    Sleep(50);
+
+    // 分离线程输入
+    if (attached) {
+        AttachThreadInput(curTid, targetTid, FALSE);
+    }
 
     return true;
 }
