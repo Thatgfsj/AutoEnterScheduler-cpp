@@ -237,24 +237,25 @@ void RefreshListView(const std::wstring& filter = L"") {
 
 // ==================== 发送回车 ====================
 bool SendEnter(HWND hwnd) {
+    // 后台模式：PostMessage 发字符消息（与 Python 版一致）
+    // WM_CHAR 0x0D = 回车字符
     DWORD_PTR result = 0;
-    LRESULT lr = SendMessageTimeoutW(hwnd, WM_KEYDOWN, VK_RETURN, 0, SMTO_ABORTIFHUNG, 1000, &result);
-    if (lr) {
-        SendMessageTimeoutW(hwnd, WM_KEYUP, VK_RETURN, 0xC0000000, SMTO_ABORTIFHUNG, 1000, &result);
-        return true;
+    BOOL ok = PostMessageW(hwnd, WM_CHAR, 0x0D, 0);
+
+    // 如果 PostMessage 失败，前台注入
+    if (!ok) {
+        DWORD targetTid = GetWindowThreadProcessId(hwnd, NULL);
+        DWORD curTid = GetCurrentThreadId();
+        if (targetTid != curTid) AttachThreadInput(curTid, targetTid, TRUE);
+
+        SetForegroundWindow(hwnd);
+        Sleep(50);
+        keybd_event(VK_RETURN, 0x1C, 0, 0);
+        Sleep(50);
+        keybd_event(VK_RETURN, 0x1C, KEYEVENTF_KEYUP, 0);
+
+        if (targetTid != curTid) AttachThreadInput(curTid, targetTid, FALSE);
     }
-
-    DWORD targetTid = GetWindowThreadProcessId(hwnd, NULL);
-    DWORD curTid = GetCurrentThreadId();
-    if (targetTid != curTid) AttachThreadInput(curTid, targetTid, TRUE);
-
-    SetForegroundWindow(hwnd);
-    Sleep(50);
-    keybd_event(VK_RETURN, 0x1C, 0, 0);
-    Sleep(50);
-    keybd_event(VK_RETURN, 0x1C, KEYEVENTF_KEYUP, 0);
-
-    if (targetTid != curTid) AttachThreadInput(curTid, targetTid, FALSE);
     return true;
 }
 
