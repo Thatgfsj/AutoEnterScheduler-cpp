@@ -237,25 +237,13 @@ void RefreshListView(const std::wstring& filter = L"") {
 
 // ==================== 发送回车 ====================
 bool SendEnter(HWND hwnd) {
-    // 后台模式：PostMessage 发字符消息（与 Python 版一致）
-    // WM_CHAR 0x0D = 回车字符
-    DWORD_PTR result = 0;
-    BOOL ok = PostMessageW(hwnd, WM_CHAR, 0x0D, 0);
+    // 方式1：后台 PostMessage（最常用，不抢焦点）
+    // 先发 WM_KEYDOWN + WM_KEYUP（键盘消息）
+    // 再发 WM_CHAR（字符消息，部分程序靠这个接收输入）
+    PostMessageW(hwnd, WM_KEYDOWN, VK_RETURN, 0x001C0001);
+    PostMessageW(hwnd, WM_KEYUP,   VK_RETURN, 0xC01C0001);
+    PostMessageW(hwnd, WM_CHAR,    0x0D,      0x001C0001);
 
-    // 如果 PostMessage 失败，前台注入
-    if (!ok) {
-        DWORD targetTid = GetWindowThreadProcessId(hwnd, NULL);
-        DWORD curTid = GetCurrentThreadId();
-        if (targetTid != curTid) AttachThreadInput(curTid, targetTid, TRUE);
-
-        SetForegroundWindow(hwnd);
-        Sleep(50);
-        keybd_event(VK_RETURN, 0x1C, 0, 0);
-        Sleep(50);
-        keybd_event(VK_RETURN, 0x1C, KEYEVENTF_KEYUP, 0);
-
-        if (targetTid != curTid) AttachThreadInput(curTid, targetTid, FALSE);
-    }
     return true;
 }
 
