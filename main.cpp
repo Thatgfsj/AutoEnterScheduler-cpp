@@ -482,7 +482,7 @@ LRESULT CALLBACK WndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam) {
 
         // ListView 替代 Listbox，支持图标
         g_hListView = CreateWindowW(WC_LISTVIEWW, L"", WS_CHILD | WS_VISIBLE | WS_BORDER |
-            WS_VSCROLL | LVS_REPORT | LVS_SHOWSELALWAYS | LVS_SINGLESEL,
+            WS_VSCROLL | LVS_REPORT | LVS_SHOWSELALWAYS,
             10, y, WND_W - 20, 200, hwnd, (HMENU)ID_LIST_WINDOWS, g_hInst, NULL);
 
         // 设置 ListView 扩展风格：整行选中 + 双缓冲
@@ -548,9 +548,11 @@ LRESULT CALLBACK WndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam) {
             WS_VSCROLL | ES_MULTILINE | ES_READONLY | ES_AUTOVSCROLL,
             10, y, WND_W - 20, 150, hwnd, (HMENU)ID_LOG_TEXT, g_hInst, NULL);
 
-        // 字体
-        HFONT hFontDefault = (HFONT)GetStockObject(DEFAULT_GUI_FONT);
-        HFONT hFontList = CreateFontW(-13, 0, 0, 0, FW_NORMAL, FALSE, FALSE, FALSE,
+        // 字体 - 全部使用微软雅黑，列表框稍大
+        HFONT hFontDefault = CreateFontW(-15, 0, 0, 0, FW_NORMAL, FALSE, FALSE, FALSE,
+            DEFAULT_CHARSET, OUT_DEFAULT_PRECIS, CLIP_DEFAULT_PRECIS,
+            CLEARTYPE_QUALITY, DEFAULT_PITCH | FF_DONTCARE, L"Microsoft YaHei UI");
+        HFONT hFontList = CreateFontW(-14, 0, 0, 0, FW_NORMAL, FALSE, FALSE, FALSE,
             DEFAULT_CHARSET, OUT_DEFAULT_PRECIS, CLIP_DEFAULT_PRECIS,
             CLEARTYPE_QUALITY, DEFAULT_PITCH | FF_DONTCARE, L"Microsoft YaHei UI");
 
